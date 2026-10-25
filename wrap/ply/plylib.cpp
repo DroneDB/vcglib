@@ -594,6 +594,12 @@ static inline int ReadDoubleA( XFILE * fp, double * d )
 
 
 
+// false when a list of n items does not fit the limit of its descriptor
+static inline bool ListFits( const PropDescriptor * d, int n )
+{
+	return d->maxlist==0 || (n>=0 && size_t(n)<=d->maxlist);
+}
+
 	// Memorizza il valore val nella variabile mem di tipo tm
 
 static inline void StoreInt( void * mem, const int tm, const int val )
@@ -947,7 +953,8 @@ int PlyElement::AddToRead(
 		int alloclist,
 		int stotype2,
 		int memtype2,
-		size_t offset2
+		size_t offset2,
+		size_t maxlist
 	)	// Vedi struttura PropDescriptor
 {
 	assert(propname);
@@ -992,6 +999,7 @@ int PlyElement::AddToRead(
 	p->desc.stotype2	= stotype2;
 	p->desc.memtype2	= memtype2;
 	p->desc.offset2		= offset2;
+	p->desc.maxlist		= maxlist;
 
 	
 	return E_NOERROR;
@@ -1383,7 +1391,8 @@ int PlyFile::AddToRead(
 		int alloclist,
 		int stotype2,
 		int memtype2,
-		size_t offset2
+		size_t offset2,
+		size_t maxlist
 	)	// Vedi struttura PropDescriptor
 {
 	assert(elemname);
@@ -1395,7 +1404,7 @@ int PlyFile::AddToRead(
 	}
 
 	int r = e->AddToRead(propname,stotype1,memtype1,offset1,islist,
-				alloclist,stotype2,memtype2,offset2 );
+				alloclist,stotype2,memtype2,offset2,maxlist );
 
 	if(r==E_NOERROR)
 		return 0;
@@ -1992,6 +2001,7 @@ static bool cb_read_list_ascii( GZFILE fp, void * mem, PropDescriptor * d )
 	char * store;
 
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, n);
+	if( !ListFits(d,int(n)) ) return false;
 		// Determinazione memoria vettore
 	if(d->alloclist)
 	{
@@ -2025,6 +2035,7 @@ static bool cb_read_list_chch( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(char));
@@ -2045,6 +2056,7 @@ static bool cb_read_list_chsh( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(short));
@@ -2069,6 +2081,7 @@ static bool cb_read_list_chin( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(int));
@@ -2093,6 +2106,7 @@ static bool cb_read_list_chuc( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uchar));
@@ -2117,6 +2131,7 @@ static bool cb_read_list_chus( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(ushort));
@@ -2141,6 +2156,7 @@ static bool cb_read_list_chui( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uint));
@@ -2165,6 +2181,7 @@ static bool cb_read_list_chfl( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(float));
@@ -2189,6 +2206,7 @@ static bool cb_read_list_chdo( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(double));
@@ -2215,6 +2233,7 @@ static bool cb_read_list_shch( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(char));
@@ -2238,6 +2257,7 @@ static bool cb_read_list_shsh( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(short));
@@ -2261,6 +2281,7 @@ static bool cb_read_list_shin( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(int));
@@ -2284,6 +2305,7 @@ static bool cb_read_list_shuc( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uchar));
@@ -2307,6 +2329,7 @@ static bool cb_read_list_shus( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(ushort));
@@ -2330,6 +2353,7 @@ static bool cb_read_list_shui( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uint));
@@ -2353,6 +2377,7 @@ static bool cb_read_list_shfl( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(float));
@@ -2376,6 +2401,7 @@ static bool cb_read_list_shdo( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(double));
@@ -2402,6 +2428,7 @@ static bool cb_read_list_inch( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(char));
@@ -2425,6 +2452,7 @@ static bool cb_read_list_insh( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(short));
@@ -2458,6 +2486,7 @@ static bool cb_read_list_inin( GZFILE fp, void * mem, PropDescriptor * d )
 	}
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(int));
@@ -2480,6 +2509,7 @@ static bool cb_read_list_inuc( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uchar));
@@ -2503,6 +2533,7 @@ static bool cb_read_list_inus( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(ushort));
@@ -2526,6 +2557,7 @@ static bool cb_read_list_inui( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uint));
@@ -2549,6 +2581,7 @@ static bool cb_read_list_infl( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(float));
@@ -2572,6 +2605,7 @@ static bool cb_read_list_indo( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(double));
@@ -2597,6 +2631,7 @@ static bool cb_read_list_ucch( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(char));
@@ -2620,6 +2655,7 @@ static bool cb_read_list_ucsh( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(short));
@@ -2643,6 +2679,7 @@ static bool cb_read_list_ucin( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(int));
@@ -2666,6 +2703,7 @@ static bool cb_read_list_ucuc( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uchar));
@@ -2689,6 +2727,7 @@ static bool cb_read_list_ucus( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(ushort));
@@ -2712,6 +2751,7 @@ static bool cb_read_list_ucui( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uint));
@@ -2735,6 +2775,7 @@ static bool cb_read_list_ucfl( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(float));
@@ -2758,6 +2799,7 @@ static bool cb_read_list_ucdo( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(double));
@@ -2784,6 +2826,7 @@ static bool cb_read_list_usch( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(char));
@@ -2807,6 +2850,7 @@ static bool cb_read_list_ussh( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(short));
@@ -2830,6 +2874,7 @@ static bool cb_read_list_usin( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(int));
@@ -2853,6 +2898,7 @@ static bool cb_read_list_usuc( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uchar));
@@ -2876,6 +2922,7 @@ static bool cb_read_list_usus( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(ushort));
@@ -2899,6 +2946,7 @@ static bool cb_read_list_usui( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uint));
@@ -2922,6 +2970,7 @@ static bool cb_read_list_usfl( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(float));
@@ -2945,6 +2994,7 @@ static bool cb_read_list_usdo( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(double));
@@ -2971,6 +3021,7 @@ static bool cb_read_list_uich( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(char));
@@ -2994,6 +3045,7 @@ static bool cb_read_list_uish( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(short));
@@ -3017,6 +3069,7 @@ static bool cb_read_list_uiin( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(int));
@@ -3040,6 +3093,7 @@ static bool cb_read_list_uiuc( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uchar));
@@ -3063,6 +3117,7 @@ static bool cb_read_list_uius( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(ushort));
@@ -3086,6 +3141,7 @@ static bool cb_read_list_uiui( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(uint));
@@ -3109,6 +3165,7 @@ static bool cb_read_list_uifl( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(float));
@@ -3132,6 +3189,7 @@ static bool cb_read_list_uido( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(double));
@@ -3157,6 +3215,7 @@ static bool cb_read_list_flfl( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(float));
@@ -3180,6 +3239,7 @@ static bool cb_read_list_fldo( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(double));
@@ -3203,6 +3263,7 @@ static bool cb_read_list_dofl( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(float));
@@ -3226,6 +3287,7 @@ static bool cb_read_list_dodo( GZFILE fp, void * mem, PropDescriptor * d )
 	if( pb_fread(&n,1,1,fp)==0 ) return false;
 	char * store;
 	StoreInt( ((char *)mem)+d->offset2, d->memtype2, int(n));
+	if( !ListFits(d,int(n)) ) return false;
 	if(d->alloclist)
 	{
 		store = (char *)calloc(n,sizeof(double));

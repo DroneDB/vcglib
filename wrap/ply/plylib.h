@@ -128,7 +128,8 @@ public:
 		 int stotype2,
 		 int memtype2,
 		 size_t offset2,
-		 int format) :
+		 int format,
+		 size_t maxlist = 0) :
 			elemname(elemname),
 			propname(propname),
 			stotype1(stotype1),
@@ -139,7 +140,8 @@ public:
 			stotype2(stotype2),
 			memtype2(memtype2),
 			offset2(offset2),
-			format(format)
+			format(format),
+			maxlist(maxlist)
 	{
 	}
 	std::string elemname; // name of the element (e.g. vertex)
@@ -154,6 +156,12 @@ public:
 	size_t offset2 = 0; // Offset valore memoria
 
 	int format = -1; // duplicazione del formato
+	// The most items a list may hold, 0 for no limit. A list read into memory the caller
+	// preallocated must not hold more than that memory has room for, and the length comes
+	// from the file: with a limit a longer (or negative) length fails the read instead of
+	// writing past the memory. The length is stored before the check, so the caller can
+	// tell why the read failed.
+	size_t maxlist = 0;
 	
 	size_t stotypesize() const; // per sapere quanto e'grande un dato descrittore sul file
 	size_t memtypesize() const; // per sapere quanto e'grande un dato descrittore in memoria
@@ -247,7 +255,8 @@ public:
 		int alloclist,
 		int stotype2,
 		int memtype2,
-		size_t offset2
+		size_t offset2,
+		size_t maxlist = 0
 	);	// Vedi struttura PropDescriptor
 
 	PlyProperty * FindProp( const char * name );
@@ -292,14 +301,15 @@ public:
 		int alloclist,
 		int stotype2,
 		int memtype2,
-		size_t offset2
+		size_t offset2,
+		size_t maxlist = 0
 	);
 		// Come sopra ma con descrittore
 	inline int AddToRead( const PropDescriptor & p )
 	{
 		return AddToRead(p.elemname.c_str(),p.propname.c_str(),p.stotype1,
 			p.memtype1,p.offset1,p.islist,p.alloclist,p.stotype2,
-			p.memtype2,p.offset2
+			p.memtype2,p.offset2,p.maxlist
 		);
 	}
 	
