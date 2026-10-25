@@ -47,6 +47,8 @@ of Greg Turk and on the work of Claudio Rocchini
 
 #ifdef WIN32
 #include <direct.h>
+// declared here, not through windows.h, whose macros clash with names of this library
+extern "C" __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int, unsigned long, const char *, int, wchar_t *, int);
 #endif
 
 #include <fcntl.h>
@@ -115,7 +117,28 @@ static inline size_t pb_read(void *buf, size_t size, size_t count, FILE *fp)
 //#else
 #define XFILE  FILE
 #define pb_fclose fclose
+#ifdef WIN32
+// The narrow fopen reads a name in the ANSI code page, which cannot name a file under a
+// folder in another script. A name that is valid UTF-8 is opened through its UTF-16 form
+// instead; one that is not is opened as before, so callers that pass ANSI names still work.
+static FILE * pb_fopen( const char * name, const char * mode )
+{
+	const unsigned int utf8 = 65001;      // CP_UTF8
+	const unsigned long invalid = 8;      // MB_ERR_INVALID_CHARS
+	const int length = MultiByteToWideChar(utf8, invalid, name, -1, 0, 0);
+	if( length > 0 )
+	{
+		std::vector<wchar_t> wname(length);
+		wchar_t wmode[16];
+		if( MultiByteToWideChar(utf8, invalid, name, -1, wname.data(), length) > 0 &&
+			MultiByteToWideChar(utf8, invalid, mode, -1, wmode, int(sizeof(wmode)/sizeof(wchar_t))) > 0 )
+			return _wfopen(wname.data(), wmode);
+	}
+	return fopen(name, mode);
+}
+#else
 #define pb_fopen  fopen
+#endif
 #define pb_fgets(s,n,f)  fgets(s,n,f)
 #define pb_fread(b,s,n,f) pb_read(b,s,n,f)
 //#endif
