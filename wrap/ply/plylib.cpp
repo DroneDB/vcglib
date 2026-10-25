@@ -3773,49 +3773,42 @@ int PlyFile::Read( void * mem )
 }
 // this function is used to interpret the texture name in the ply header substituting "<this>" with the filename
 // of the ply file itself. This is used to allow to rename the ply file without having to change the texture name inside the ply file
-void interpret_texture_name(const char*a, const char*fn, char*output, size_t linesize){
-	int ia=0,io=0;
-	output[0]=0;
-	while (a[ia]!=0){
-		if (a[ia]=='<') {
-			if (static_cast<int>(strlen(a)) > ia+5) {
-				if ( ( (a[ia+1]=='t') || (a[ia+1]=='T') ) &&
-						 ( (a[ia+2]=='h') || (a[ia+2]=='H') ) &&
-						 ( (a[ia+3]=='i') || (a[ia+3]=='I') ) &&
-						 ( (a[ia+4]=='s') || (a[ia+4]=='S') ) &&
-						 ( a[ia+5]=='>' ) )
-				{
-					// substitute "<this>" with filename:
-					// 1) remove path from filename 
-					int lastbar=0;
-					int ifn=0;
-					while (fn[ifn]!=0) { if ((fn[ifn]=='/') || (fn[ifn]=='\\')) lastbar=ifn+1; ifn++;}
-					ifn=lastbar;
-					char fn2[255];
-					while (fn[ifn]!=0) { fn2[ifn-lastbar]=fn[ifn]; ifn++;}
-					fn2[ifn-lastbar]=0;
+std::string interpret_texture_name(const std::string &a, const std::string &fn)
+{
+	const auto is = [](char c, char lower) { return c == lower || c == lower - 'a' + 'A'; };
 
-					// 2) remove ".ply" extention from filename
-					int l=ifn-lastbar;
-					if ((fn2[l-4]=='.') 
-						&& ((fn2[l-3]=='P') || (fn2[l-3]=='p')) 
-						&& ((fn2[l-2]=='L') || (fn2[l-2]=='l')) 
-						&& ((fn2[l-1]=='Y') || (fn2[l-1]=='y')) )
-					fn2[l-4]=0;
+	// "<this>" stands for the name of the ply file without its folder and without ".ply"
+	const size_t bar = fn.find_last_of("/\\");
+	std::string self = bar == std::string::npos ? fn : fn.substr(bar+1);
+	const size_t l = self.size();
+	if( l >= 4 && self[l-4]=='.' && is(self[l-3],'p') && is(self[l-2],'l') && is(self[l-1],'y') )
+		self.resize(l-4);
 
-					// 3) append
-					output[io]=0;
-					// replace sprintf(output,"%s%s",output,fn2);
-					snprintf(output, linesize, "%s%s",output,fn2);
-					io=strlen(output);
-					ia+=6; //skip the "<this>"
-					continue;
-				};
-			}
+	std::string output;
+	size_t ia = 0;
+	while( ia < a.size() )
+	{
+		if( a[ia]=='<' && a.size() > ia+5 &&
+			is(a[ia+1],'t') && is(a[ia+2],'h') && is(a[ia+3],'i') && is(a[ia+4],'s') && a[ia+5]=='>' )
+		{
+			output += self;
+			ia += 6;
+			continue;
 		}
-		output[io++]=a[ia++]; 
-	};
-	output[io]=0;
+		output += a[ia++];
+	}
+	return output;
+}
+
+// The same into a buffer of linesize bytes: a longer name is cut to fit, and the buffer always
+// ends with a 0 (the name and the file name can be any length, the buffer cannot)
+void interpret_texture_name(const char*a, const char*fn, char*output, size_t linesize){
+	if( linesize == 0 )
+		return;
+	const std::string name = interpret_texture_name(std::string(a), std::string(fn));
+	const size_t n = std::min(name.size(), linesize-1);
+	memcpy(output, name.data(), n);
+	output[n] = 0;
 }
 } 
 }

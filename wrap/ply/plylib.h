@@ -360,6 +360,7 @@ protected:
 	PlyElement * FindElement( const char * name );
 };
 
+std::string interpret_texture_name(const std::string &a, const std::string &fn);
 void interpret_texture_name(const char*a, const char*fn, char*output, size_t linesize);
 
   } // end namespace ply
